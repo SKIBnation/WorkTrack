@@ -1,4 +1,4 @@
-import { CalendarDays, ChartColumn, House, Settings, Timer } from 'lucide-react'
+import { CalendarDays, ChartColumn, House, PiggyBank, Settings, Timer } from 'lucide-react'
 import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { WorkContext, useLiveWorkData, useWorkData } from '../hooks/useWorkData.ts'
@@ -8,7 +8,8 @@ const tabs = [
   { to: '/', label: 'Home', icon: House, end: true },
   { to: '/track', label: 'Track', icon: Timer, end: false },
   { to: '/history', label: 'History', icon: CalendarDays, end: false },
-  { to: '/stats', label: 'Statistics', icon: ChartColumn, end: false },
+  { to: '/goals', label: 'Goals', icon: PiggyBank, end: false },
+  { to: '/stats', label: 'Stats', icon: ChartColumn, end: false },
   { to: '/settings', label: 'Settings', icon: Settings, end: false },
 ]
 
@@ -16,6 +17,7 @@ const titles: Record<string, string> = {
   '/': 'Home',
   '/track': 'Track',
   '/history': 'History',
+  '/goals': 'Goals',
   '/stats': 'Statistics',
   '/settings': 'Settings',
 }
@@ -61,7 +63,7 @@ function ShellFrame() {
         className="shrink-0 border-t border-stroke bg-nav backdrop-blur-xl"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="grid grid-cols-5">
+        <div className="grid grid-cols-6">
           {tabs.map((tab) => (
             <NavLink
               key={tab.to}

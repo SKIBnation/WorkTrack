@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { createContext, useContext, useMemo } from 'react'
-import type { Schedule, Settings, Shift } from '../types.ts'
+import type { Goal, GoalDeposit, Schedule, Settings, Shift } from '../types.ts'
 import { summarize, type WorkSummary } from '../lib/calc.ts'
 import { db, SETTINGS_ID } from '../lib/db.ts'
 import { normalizeSettings } from '../lib/settings.ts'
@@ -11,6 +11,8 @@ export interface WorkData {
   settings: Settings | null
   shifts: Shift[]
   schedules: Schedule[]
+  goals: Goal[]
+  deposits: GoalDeposit[]
   summary: WorkSummary | null
   now: number
 }
@@ -21,8 +23,10 @@ export function useLiveWorkData(): WorkData {
   const settingsRow = useLiveQuery(() => db.settings.get(SETTINGS_ID))
   const shifts = useLiveQuery(() => db.shifts.orderBy('clockIn').toArray())
   const schedules = useLiveQuery(() => db.schedules.toArray())
+  const goals = useLiveQuery(() => db.goals.toArray())
+  const deposits = useLiveQuery(() => db.deposits.toArray())
   const now = useNow()
-  const ready = settingsRow !== undefined && shifts !== undefined && schedules !== undefined
+  const ready = settingsRow !== undefined && shifts !== undefined && schedules !== undefined && goals !== undefined && deposits !== undefined
   const settings = useMemo(() => (settingsRow ? normalizeSettings(settingsRow) : null), [settingsRow])
 
   const summary = useMemo(() => {
@@ -35,6 +39,8 @@ export function useLiveWorkData(): WorkData {
     settings,
     shifts: shifts ?? [],
     schedules: schedules ?? [],
+    goals: goals ?? [],
+    deposits: deposits ?? [],
     summary,
     now,
   }

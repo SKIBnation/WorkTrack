@@ -1,5 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie'
-import type { BreakEntry, Schedule, Settings, Shift } from '../types.ts'
+import type { BreakEntry, Goal, GoalDeposit, Schedule, Settings, Shift } from '../types.ts'
 import { validateShift } from './calc.ts'
 import { defaultSettings, normalizeSettings, SETTINGS_ID } from './settings.ts'
 
@@ -11,6 +11,8 @@ type WorkDatabase = Dexie & {
   shifts: EntityTable<Shift, 'id'>
   settings: EntityTable<Settings, 'id'>
   schedules: EntityTable<Schedule, 'id'>
+  goals: EntityTable<Goal, 'id'>
+  deposits: EntityTable<GoalDeposit, 'id'>
 }
 
 function createDatabase(): WorkDatabase {
@@ -19,6 +21,13 @@ function createDatabase(): WorkDatabase {
     shifts: 'id, clockIn, clockOut',
     settings: 'id',
     schedules: 'id, weekday',
+  })
+  database.version(2).stores({
+    shifts: 'id, clockIn, clockOut',
+    settings: 'id',
+    schedules: 'id, weekday',
+    goals: 'id, createdAt',
+    deposits: 'id, goalId, createdAt',
   })
   database.on('ready', async () => {
     const existing = await database.settings.get(SETTINGS_ID)
@@ -142,16 +151,55 @@ export async function deleteSchedule(id: string): Promise<void> {
   await db.schedules.delete(id)
 }
 
-export async function replaceAllData(settings: Settings, shifts: Shift[], schedules: Schedule[]): Promise<void> {
-  await db.transaction('rw', db.settings, db.shifts, db.schedules, async () => {
+export async function saveGoal(goal: Goal): Promise<void> {
+  const name = goal.name.trim()
+  const targetAmount = roundMoney(goal.targetAmount)
+  if (!name || targetAmount <= 0) return
+  await db.goals.put({ ...goal, name, targetAmount })
+}
+
+export async function deleteGoal(id: string): Promise<void> {
+  await db.transaction('rw', db.goals, db.deposits, async () => {
+    await db.deposits.where('goalId').equals(id).delete()
+    await db.goals.delete(id)
+  })
+}
+
+export async function addDeposit(goalId: string, amount: number): Promise<void> {
+  const rounded = roundMoney(amount)
+  if (!goalId || rounded <= 0) return
+  await db.deposits.add({ id: uid(), goalId, amount: rounded, createdAt: new Date().toISOString() })
+}
+
+export async function deleteDeposit(id: string): Promise<void> {
+  await db.deposits.delete(id)
+}
+
+export async function replaceAllData(
+  settings: Settings,
+  shifts: Shift[],
+  schedules: Schedule[],
+  goals: Goal[] = [],
+  deposits: GoalDeposit[] = [],
+): Promise<void> {
+  await db.transaction('rw', db.settings, db.shifts, db.schedules, db.goals, db.deposits, async () => {
     await db.shifts.clear()
     await db.schedules.clear()
+    await db.goals.clear()
+    await db.deposits.clear()
     await db.settings.clear()
     if (shifts.length) await db.shifts.bulkAdd(shifts)
     if (schedules.length) await db.schedules.bulkAdd(schedules)
+    if (goals.length) await db.goals.bulkAdd(goals)
+    if (deposits.length) await db.deposits.bulkAdd(deposits)
     await db.settings.put(normalizeSettings(settings))
   })
   rememberTheme(normalizeSettings(settings).theme)
+}
+
+function roundMoney(amount: number): number {
+  if (!Number.isFinite(amount)) return 0
+  return Math.round(amount * 100) / 100
 }
 
 function rememberTheme(theme: string): void {

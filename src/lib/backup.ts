@@ -1,4 +1,4 @@
-import type { Schedule, Settings, Shift, TimeFormat } from '../types.ts'
+import type { Goal, GoalDeposit, Schedule, Settings, Shift, TimeFormat } from '../types.ts'
 import type { ClassifiedSlice } from './calc.ts'
 import { totalsFromSlices } from './calc.ts'
 import { formatTime } from './format.ts'
@@ -12,9 +12,19 @@ export interface BackupFile {
   settings: Settings
   shifts: Shift[]
   schedules: Schedule[]
+  goals?: Goal[]
+  deposits?: GoalDeposit[]
 }
 
-export function createBackup(settings: Settings, shifts: Shift[], schedules: Schedule[]): string {
+export interface RestoredBackup {
+  settings: Settings
+  shifts: Shift[]
+  schedules: Schedule[]
+  goals: Goal[]
+  deposits: GoalDeposit[]
+}
+
+export function createBackup(settings: Settings, shifts: Shift[], schedules: Schedule[], goals: Goal[] = [], deposits: GoalDeposit[] = []): string {
   const payload: BackupFile = {
     app: 'WorkTrack',
     version: 1,
@@ -22,11 +32,13 @@ export function createBackup(settings: Settings, shifts: Shift[], schedules: Sch
     settings,
     shifts,
     schedules,
+    goals,
+    deposits,
   }
   return JSON.stringify(payload, null, 2)
 }
 
-export function parseBackup(text: string): { settings: Settings; shifts: Shift[]; schedules: Schedule[] } | { error: string } {
+export function parseBackup(text: string): RestoredBackup | { error: string } {
   let parsed: unknown
   try {
     parsed = JSON.parse(text)
@@ -49,7 +61,24 @@ export function parseBackup(text: string): { settings: Settings; shifts: Shift[]
     const schedule = normalizeSchedule(item)
     if (schedule) schedules.push(schedule)
   }
-  return { settings, shifts: uniqueById(shifts), schedules: uniqueById(schedules) }
+  const goals: Goal[] = []
+  for (const item of Array.isArray(value.goals) ? value.goals : []) {
+    const goal = normalizeGoal(item)
+    if (goal) goals.push(goal)
+  }
+  const goalIds = new Set(goals.map((goal) => goal.id))
+  const deposits: GoalDeposit[] = []
+  for (const item of Array.isArray(value.deposits) ? value.deposits : []) {
+    const deposit = normalizeDeposit(item)
+    if (deposit && goalIds.has(deposit.goalId)) deposits.push(deposit)
+  }
+  return {
+    settings,
+    shifts: uniqueById(shifts),
+    schedules: uniqueById(schedules),
+    goals: uniqueById(goals),
+    deposits: uniqueById(deposits),
+  }
 }
 
 export function shiftsToCsv(
@@ -179,6 +208,35 @@ function normalizeSchedule(raw: unknown): Schedule | null {
     startTime: value.startTime,
     endTime: value.endTime,
     enabled: value.enabled !== false,
+  }
+}
+
+function normalizeGoal(raw: unknown): Goal | null {
+  if (!raw || typeof raw !== 'object') return null
+  const value = raw as Partial<Goal>
+  if (typeof value.id !== 'string') return null
+  const name = typeof value.name === 'string' ? value.name.trim() : ''
+  const targetAmount = finite(value.targetAmount, 0)
+  if (!name || targetAmount <= 0) return null
+  return {
+    id: value.id,
+    name,
+    targetAmount: Math.round(targetAmount * 100) / 100,
+    createdAt: typeof value.createdAt === 'string' ? value.createdAt : new Date().toISOString(),
+  }
+}
+
+function normalizeDeposit(raw: unknown): GoalDeposit | null {
+  if (!raw || typeof raw !== 'object') return null
+  const value = raw as Partial<GoalDeposit>
+  if (typeof value.id !== 'string' || typeof value.goalId !== 'string') return null
+  const amount = finite(value.amount, 0)
+  if (amount <= 0) return null
+  return {
+    id: value.id,
+    goalId: value.goalId,
+    amount: Math.round(amount * 100) / 100,
+    createdAt: typeof value.createdAt === 'string' ? value.createdAt : new Date().toISOString(),
   }
 }
 

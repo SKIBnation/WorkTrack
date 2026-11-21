@@ -344,6 +344,8 @@ describe('validation and backup', () => {
     expect(parsed.settings.timezone).toBe('Europe/London')
     expect(parsed.shifts).toHaveLength(1)
     expect(parsed.shifts[0]?.hourlyRate).toBe(15)
+    expect(parsed.goals).toEqual([])
+    expect(parsed.deposits).toEqual([])
     expect('error' in parseBackup('{')).toBe(true)
   })
 })

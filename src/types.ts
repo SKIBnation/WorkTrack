@@ -38,6 +38,21 @@ export interface Schedule {
   enabled: boolean
 }
 
+export interface Goal {
+  id: string
+  name: string
+  targetAmount: number
+  createdAt: string
+}
+
+/** Money put aside toward a goal. The saved total is the sum of these amounts. */
+export interface GoalDeposit {
+  id: string
+  goalId: string
+  amount: number
+  createdAt: string
+}
+
 export interface NotificationPreferences {
   clockInReminder: boolean
   clockOutReminder: boolean

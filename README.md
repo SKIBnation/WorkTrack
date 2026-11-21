@@ -53,7 +53,7 @@ Open it once while you are online. That visit stores the app on the phone. After
 
 ## Offline and backups
 
-Shifts, the active clock-in, pay settings, breaks, schedules, and targets are stored in IndexedDB on the device. The service worker caches the app itself.
+Shifts, the active clock-in, pay settings, breaks, schedules, savings goals, and targets are stored in IndexedDB on the device. The service worker caches the app itself.
 
 There is no account and no server copy. Use **Settings → Backup**:
 

@@ -2,6 +2,7 @@ import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from '
 import { HashRouter, Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/AppShell.tsx'
 import { db } from './lib/db.ts'
+import { GoalsPage } from './pages/GoalsPage.tsx'
 import { HistoryPage } from './pages/HistoryPage.tsx'
 import { HomePage } from './pages/HomePage.tsx'
 import { SettingsPage } from './pages/SettingsPage.tsx'
@@ -46,6 +47,7 @@ export default function App() {
             <Route index element={<HomePage />} />
             <Route path="track" element={<TrackPage />} />
             <Route path="history" element={<HistoryPage />} />
+            <Route path="goals" element={<GoalsPage />} />
             <Route
               path="stats"
               element={

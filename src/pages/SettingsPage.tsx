@@ -9,12 +9,12 @@ import { CURRENCIES, formatInputNumber, formatMoney, parseNumber } from '../lib/
 import { notificationSupport, requestNotificationPermission } from '../lib/reminders.ts'
 import { parseTaxCode } from '../lib/tax.ts'
 import { resolveZone, TIMEZONES, WEEKDAYS } from '../lib/time.ts'
-import type { NotificationPreferences, OvertimeMethod, OvertimeMode, Schedule, Settings, Shift, ThemeMode, TimeFormat } from '../types.ts'
+import type { Goal, GoalDeposit, NotificationPreferences, OvertimeMethod, OvertimeMode, Schedule, Settings, Shift, ThemeMode, TimeFormat } from '../types.ts'
 
 export function SettingsPage() {
-  const { ready, settings, shifts, schedules, summary } = useWorkData()
+  const { ready, settings, shifts, schedules, goals, deposits, summary } = useWorkData()
   const fileRef = useRef<HTMLInputElement>(null)
-  const [pending, setPending] = useState<{ settings: Settings; shifts: Shift[]; schedules: Schedule[] } | null>(null)
+  const [pending, setPending] = useState<{ settings: Settings; shifts: Shift[]; schedules: Schedule[]; goals: Goal[]; deposits: GoalDeposit[] } | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [permission, setPermission] = useState(notificationSupport())
 
@@ -257,7 +257,7 @@ export function SettingsPage() {
         <button type="button" className="block w-full border-b border-stroke py-3 text-left text-[15px]" onClick={() => void shareOrDownload(`worktrack-${stamp}.csv`, shiftsToCsv(shifts, summary.slices, settings.timezone, settings.timeFormat), 'text/csv')}>
           Export shifts as CSV
         </button>
-        <button type="button" className="block w-full border-b border-stroke py-3 text-left text-[15px]" onClick={() => void shareOrDownload(`worktrack-backup-${stamp}.json`, createBackup(settings, shifts, schedules), 'application/json')}>
+        <button type="button" className="block w-full border-b border-stroke py-3 text-left text-[15px]" onClick={() => void shareOrDownload(`worktrack-backup-${stamp}.json`, createBackup(settings, shifts, schedules, goals, deposits), 'application/json')}>
           Download full backup
         </button>
         <button type="button" className="block w-full py-3 text-left text-[15px]" onClick={() => fileRef.current?.click()}>
@@ -265,7 +265,7 @@ export function SettingsPage() {
         </button>
         <input ref={fileRef} className="hidden" type="file" accept="application/json" onChange={onImport} />
         <p className="pb-3 text-xs leading-5 text-muted">
-          Everything stays on this device. A JSON backup restores shifts, schedules, and settings. CSV is for a spreadsheet. Restoring replaces the data already on this device.
+          Everything stays on this device. A JSON backup restores shifts, schedules, goals, and settings. CSV is for a spreadsheet. Restoring replaces the data already on this device.
         </p>
         {notice && <p className="pb-3 text-sm text-danger">{notice}</p>}
       </Section>
@@ -282,12 +282,12 @@ export function SettingsPage() {
       {pending && (
         <Confirm
           title="Restore this backup?"
-          body="This replaces the shifts, schedule, and settings stored on this device."
+          body="This replaces the shifts, schedule, goals, and settings stored on this device."
           confirmLabel="Restore"
           danger
           onCancel={() => setPending(null)}
           onConfirm={() => {
-            void replaceAllData(pending.settings, pending.shifts, pending.schedules).then(() => {
+            void replaceAllData(pending.settings, pending.shifts, pending.schedules, pending.goals, pending.deposits).then(() => {
               setPending(null)
               setNotice('Backup restored.')
             })
