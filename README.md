@@ -39,36 +39,6 @@ npm run preview
 
 `npm run build` type-checks the project and writes the site to `dist`. `npm run preview` serves that folder at http://localhost:4173.
 
-## Put it online for free
-
-Cloudflare Pages is the better host for this app. The site is served from the domain root, which is what an iPhone needs for a reliable home-screen install. The free plan is enough.
-
-1. Create a repository on GitHub and push this folder to it.
-2. Sign in at https://dash.cloudflare.com and open **Workers & Pages**.
-3. Create a Pages project and connect the GitHub repository.
-4. Use these build settings:
-   - Framework preset: None
-   - Build command: `npm run build`
-   - Build output directory: `dist`
-5. Do not set `VITE_BASE`. Leave it unset so the app is served from `/`.
-6. Deploy, then open the `pages.dev` address.
-
-The first deploy can take a minute. Later pushes to the connected branch deploy automatically.
-
-### GitHub Pages
-
-GitHub Pages also works. This repository includes `.github/workflows/pages.yml`.
-
-1. Push the project to GitHub.
-2. In the repository, open **Settings → Pages**.
-3. Under **Build and deployment**, choose **GitHub Actions**.
-4. Push to `main`. The workflow publishes the site.
-
-For a normal project repository, the site address is `https://<user>.github.io/<repository>/`. The workflow sets `VITE_BASE` to that repository name so the app icon, service worker, and scripts load from the right path.
-
-If the repository is a user site named `<user>.github.io`, edit the workflow and set `VITE_BASE` to `/`.
-
-If you deploy with Cloudflare and do not want GitHub to publish a second copy, delete `.github/workflows/pages.yml`.
 
 ## Install it on an iPhone
 
