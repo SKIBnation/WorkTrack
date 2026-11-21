@@ -7,6 +7,7 @@ import { overtimeHourlyRate } from '../lib/calc.ts'
 import { deleteSchedule, replaceAllData, saveSchedule, uid, updateSettings } from '../lib/db.ts'
 import { CURRENCIES, formatInputNumber, formatMoney, parseNumber } from '../lib/format.ts'
 import { notificationSupport, requestNotificationPermission } from '../lib/reminders.ts'
+import { parseTaxCode } from '../lib/tax.ts'
 import { resolveZone, TIMEZONES, WEEKDAYS } from '../lib/time.ts'
 import type { NotificationPreferences, OvertimeMethod, OvertimeMode, Schedule, Settings, Shift, ThemeMode, TimeFormat } from '../types.ts'
 
@@ -95,6 +96,15 @@ export function SettingsPage() {
         />
         <p className="py-3 text-xs leading-5 text-muted">
           New shifts keep a copy of these rules. Changing your rate does not change money already recorded on past shifts.
+        </p>
+      </Section>
+
+      <Section title="Tax">
+        <TaxCodeRow value={settings.taxCode} onCommit={(taxCode) => void updateSettings({ taxCode })} />
+        <p className="py-3 text-xs leading-5 text-muted">
+          {parseTaxCode(settings.taxCode)?.summary} WorkTrack uses the shifts saved since 6 April and the tax week of each one. A week you did not record still
+          adds unused allowance on a cumulative code. National Insurance is category A, calculated on each week on its own. Pension contributions and
+          student loans are not deducted. Gross pay already recorded on a shift stays as it is.
         </p>
       </Section>
 
@@ -338,6 +348,46 @@ function NumberRow({
         />
         {suffix && <span className="text-sm text-muted">{suffix}</span>}
       </span>
+    </label>
+  )
+}
+
+function TaxCodeRow({ value, onCommit }: { value: string; onCommit: (value: string) => void }) {
+  const [text, setText] = useState(value)
+  const [error, setError] = useState<string | null>(null)
+  useEffect(() => setText(value), [value])
+  const commit = (next: string) => {
+    const parsed = parseTaxCode(next)
+    if (!parsed) {
+      setError('Enter a UK tax code, such as 1257L, S1257L, BR, or K497.')
+      return
+    }
+    setError(null)
+    setText(parsed.canonical)
+    if (parsed.canonical !== value) onCommit(parsed.canonical)
+  }
+  return (
+    <label className="block border-b border-stroke py-3">
+      <span className="flex items-center justify-between gap-3">
+        <span className="text-[15px]">Tax code</span>
+        <input
+          aria-label="Tax code"
+          value={text}
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
+          onChange={(event) => {
+            setText(event.target.value.toUpperCase())
+            setError(null)
+          }}
+          onBlur={(event) => commit(event.currentTarget.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') event.currentTarget.blur()
+          }}
+          className="w-32 rounded-xl bg-[var(--field)] px-3 py-2 text-right tracking-wide uppercase outline-none"
+        />
+      </span>
+      {error && <span className="mt-2 block text-xs text-danger">{error}</span>}
     </label>
   )
 }

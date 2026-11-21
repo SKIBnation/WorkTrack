@@ -3,6 +3,7 @@ import { createContext, useContext, useMemo } from 'react'
 import type { Schedule, Settings, Shift } from '../types.ts'
 import { summarize, type WorkSummary } from '../lib/calc.ts'
 import { db, SETTINGS_ID } from '../lib/db.ts'
+import { normalizeSettings } from '../lib/settings.ts'
 import { useNow } from './useNow.ts'
 
 export interface WorkData {
@@ -22,7 +23,7 @@ export function useLiveWorkData(): WorkData {
   const schedules = useLiveQuery(() => db.schedules.toArray())
   const now = useNow()
   const ready = settingsRow !== undefined && shifts !== undefined && schedules !== undefined
-  const settings = settingsRow ?? null
+  const settings = useMemo(() => (settingsRow ? normalizeSettings(settingsRow) : null), [settingsRow])
 
   const summary = useMemo(() => {
     if (!settings || !shifts || !schedules) return null

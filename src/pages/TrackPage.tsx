@@ -64,6 +64,9 @@ export function TrackPage() {
           {formatMoney(active?.hourlyRate ?? settings.hourlyRate, currency)}/hour
           {summary.activeOvertimeEarnings > 0 ? ' · includes overtime' : ''}
         </p>
+        {active && (
+          <p className="mt-1 text-sm text-muted tabular-nums">{formatMoney(summary.takeHome.active.takeHome, currency)} after tax and NI</p>
+        )}
         {status === 'break' && <p className="mt-3 text-sm text-amber">Break {formatTimer(summary.activeOpenBreakMs)}</p>}
         {active && (
           <p className="mt-3 text-sm text-muted">

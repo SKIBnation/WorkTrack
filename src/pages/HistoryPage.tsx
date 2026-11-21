@@ -114,6 +114,7 @@ export function HistoryPage() {
           timeFormat={settings.timeFormat}
           asOf={now}
           totals={totalsFromSlices(summary.slices.filter((slice) => slice.shiftId === selected.id))}
+          takeHome={summary.takeHome.byShift[selected.id]}
           onClose={() => setSelectedId(null)}
           onEdit={() => setEditing(selected)}
         />
@@ -257,6 +258,7 @@ function ShiftDetail({
   timeFormat,
   asOf,
   totals,
+  takeHome,
   onClose,
   onEdit,
 }: {
@@ -265,6 +267,7 @@ function ShiftDetail({
   timeFormat: '12' | '24'
   asOf: number
   totals: ReturnType<typeof totalsFromSlices>
+  takeHome?: { tax: number; nationalInsurance: number; takeHome: number }
   onClose: () => void
   onEdit: () => void
 }) {
@@ -282,6 +285,13 @@ function ShiftDetail({
     ['Normal pay', formatMoney(totals.normalEarnings, shift.currency)],
     ['Overtime pay', formatMoney(totals.overtimeEarnings, shift.currency)],
     ['Total earned', formatMoney(totals.totalEarnings, shift.currency)],
+    ...(takeHome
+      ? [
+          ['Income tax', formatMoney(takeHome.tax, shift.currency)],
+          ['National Insurance', formatMoney(takeHome.nationalInsurance, shift.currency)],
+          ['After tax and NI', formatMoney(takeHome.takeHome, shift.currency)],
+        ]
+      : []),
   ]
 
   return (

@@ -52,6 +52,13 @@ export function StatsPage() {
         <p className="mt-2 text-sm text-muted">
           {formatHours(current.paidHours)} · {formatHours(current.overtimeHours)} overtime
         </p>
+        <p className="mt-1 text-sm text-muted tabular-nums">
+          {formatMoney(
+            (mode === 'month' ? summary.takeHome.month : mode === 'year' ? summary.takeHome.year : summary.takeHome.week).takeHome,
+            currency,
+          )}{' '}
+          after tax and NI
+        </p>
         <div className="mt-4 grid grid-cols-2 gap-3 border-t border-stroke pt-4 text-sm">
           <div>
             <p className="text-muted">Normal</p>

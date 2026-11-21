@@ -70,6 +70,8 @@ export interface Settings {
   weeklyHoursTarget: number
   weeklyEarningsTarget: number
   monthlyEarningsTarget: number
+  /** UK PAYE code, such as 1257L. Used only to estimate take-home pay. */
+  taxCode: string
   theme: ThemeMode
   timeFormat: TimeFormat
   weekStartsOn: WeekStart

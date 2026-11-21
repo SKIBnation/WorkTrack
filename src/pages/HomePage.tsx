@@ -54,6 +54,7 @@ export function HomePage() {
           <p className="mt-3 text-[42px] leading-none font-semibold tracking-tight text-gain tabular-nums">
             {formatMoney(summary.week.totalEarnings, currency)}
           </p>
+          <p className="mt-2 text-sm text-muted tabular-nums">{formatMoney(summary.takeHome.week.takeHome, currency)} after tax and NI</p>
           {settings.weeklyEarningsTarget > 0 ? (
             <div className="mt-5">
               <div className="mb-2 flex items-center justify-between text-[13px]">
@@ -83,27 +84,51 @@ export function HomePage() {
               <p className="text-muted">Overtime</p>
               <p className="mt-1 font-medium text-amber tabular-nums">{formatMoney(summary.week.overtimeEarnings, currency)}</p>
             </div>
+            <div>
+              <p className="text-muted">Income tax</p>
+              <p className="mt-1 font-medium tabular-nums">{formatMoney(summary.takeHome.week.tax, currency)}</p>
+            </div>
+            <div>
+              <p className="text-muted">National Insurance</p>
+              <p className="mt-1 font-medium tabular-nums">{formatMoney(summary.takeHome.week.nationalInsurance, currency)}</p>
+            </div>
           </div>
         </div>
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
-        <Metric label="Today" value={formatHours(summary.today.paidHours)} detail={formatMoney(summary.today.totalEarnings, currency)} />
+        <Metric
+          label="Today"
+          value={formatHours(summary.today.paidHours)}
+          detail={formatMoney(summary.today.totalEarnings, currency)}
+          footer={`${formatMoney(summary.takeHome.today.takeHome, currency)} after tax and NI`}
+        />
         <Metric
           label="This month"
           value={formatHours(summary.month.paidHours)}
           detail={formatMoney(summary.month.totalEarnings, currency)}
-          footer={
+          footer={[
+            `${formatMoney(summary.takeHome.month.takeHome, currency)} after tax and NI`,
             settings.monthlyEarningsTarget > 0
               ? `${formatPercent(summary.month.totalEarnings / settings.monthlyEarningsTarget)} of ${formatMoney(settings.monthlyEarningsTarget, currency)}`
-              : undefined
-          }
+              : '',
+          ]
+            .filter(Boolean)
+            .join(' · ')}
         />
-        <Metric label="This year" value={formatMoney(summary.year.totalEarnings, currency)} detail={formatHours(summary.year.paidHours)} />
+        <Metric
+          label="This year"
+          value={formatMoney(summary.year.totalEarnings, currency)}
+          detail={formatHours(summary.year.paidHours)}
+          footer={`${formatMoney(summary.takeHome.year.takeHome, currency)} after tax and NI`}
+        />
         <Metric
           label={projectionLabel}
           value={formatMoney(projection, currency)}
           footer={[
+            summary.month.totalEarnings > 0
+              ? `${formatMoney(projection * (summary.takeHome.month.takeHome / summary.month.totalEarnings), currency)} after tax`
+              : '',
             summary.projectedYear > 0 ? `${formatMoney(summary.projectedYear, currency)} this year` : '',
             showSchedule ? `${formatMoney(summary.estimatedMonth, currency)} on schedule` : '',
           ]

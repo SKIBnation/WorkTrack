@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon'
 import type { OvertimeMethod, Schedule, Settings, Shift, WeekStart } from '../types.ts'
+import { allocateTakeHome, sumTakeHome, type TakeHomePart } from './tax.ts'
 import { applyTime, instantInZone, resolveZone, splitByLocalDay, startOfWeek, toUtcIso, weekId } from './time.ts'
 
 const HOUR_MS = 3_600_000
@@ -87,6 +88,15 @@ export interface WorkSummary {
   slices: ClassifiedSlice[]
   currencies: string[]
   mixedCurrency: boolean
+  takeHome: {
+    today: TakeHomePart
+    week: TakeHomePart
+    month: TakeHomePart
+    year: TakeHomePart
+    lifetime: TakeHomePart
+    active: TakeHomePart
+    byShift: Record<string, TakeHomePart>
+  }
 }
 
 export interface SeriesPoint {
@@ -269,6 +279,13 @@ export function summarize(input: {
 
   const completed = input.shifts.filter((shift) => shift.clockOut)
   const currencies = [...new Set(slices.filter((slice) => slice.normalMs + slice.overtimeMs > 0).map((slice) => slice.currency))]
+  const takeHome = takeHomeForSlices(slices, input.settings.taxCode, {
+    today: slices.filter((slice) => slice.dateKey === todayKey),
+    week: slices.filter((slice) => slice.weekKey === currentWeekKey),
+    month: slices.filter((slice) => slice.monthKey === monthKey),
+    year: slices.filter((slice) => slice.yearKey === yearKey),
+    active: activeSlices,
+  })
 
   return {
     status,
@@ -303,6 +320,46 @@ export function summarize(input: {
     slices,
     currencies,
     mixedCurrency: currencies.length > 1,
+    takeHome,
+  }
+}
+
+function takeHomeForSlices(
+  slices: ClassifiedSlice[],
+  taxCode: string,
+  groups: {
+    today: ClassifiedSlice[]
+    week: ClassifiedSlice[]
+    month: ClassifiedSlice[]
+    year: ClassifiedSlice[]
+    active: ClassifiedSlice[]
+  },
+) {
+  const keys = new Map<ClassifiedSlice, string>()
+  slices.forEach((slice, index) => keys.set(slice, `${slice.shiftId}:${slice.startMs}:${index}`))
+  const parts = allocateTakeHome(
+    slices.map((slice) => ({
+      key: keys.get(slice) ?? slice.shiftId,
+      dateKey: slice.dateKey,
+      startMs: slice.startMs,
+      earnings: slice.normalEarnings + slice.overtimeEarnings,
+    })),
+    taxCode,
+  )
+  const netFor = (chosen: ClassifiedSlice[]) =>
+    sumTakeHome(chosen.map((slice) => parts.get(keys.get(slice) ?? '')).filter((part): part is TakeHomePart => part != null))
+  const byShift: Record<string, TakeHomePart> = {}
+  for (const shiftId of new Set(slices.map((slice) => slice.shiftId))) {
+    byShift[shiftId] = netFor(slices.filter((slice) => slice.shiftId === shiftId))
+  }
+  return {
+    today: netFor(groups.today),
+    week: netFor(groups.week),
+    month: netFor(groups.month),
+    year: netFor(groups.year),
+    lifetime: netFor(slices),
+    active: netFor(groups.active),
+    byShift,
   }
 }
 
