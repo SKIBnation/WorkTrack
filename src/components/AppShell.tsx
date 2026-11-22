@@ -65,7 +65,7 @@ function ShellFrame() {
 
   return (
     <ClockOutContextProvider value={setReceiptId}>
-    <div className="relative mx-auto flex h-dvh max-w-[480px] flex-col overflow-hidden bg-[var(--wallpaper)] text-fg">
+    <div className="app-frame relative mx-auto flex max-w-[480px] flex-col overflow-hidden bg-[var(--wallpaper)] text-fg">
       {preset.id !== 'plain' && <Wallpaper preset={preset} theme={theme} />}
       <div className="relative z-10 shrink-0" style={{ height: 'env(safe-area-inset-top)' }} />
       <main className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain">

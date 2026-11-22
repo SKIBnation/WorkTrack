@@ -25,7 +25,7 @@ export default function App() {
 
   if (state === 'error') {
     return (
-      <div className="mx-auto flex h-dvh max-w-[480px] flex-col justify-center bg-black px-6 text-white">
+      <div className="app-frame mx-auto flex max-w-[480px] flex-col justify-center bg-black px-6 text-white">
         <p className="text-2xl font-semibold">WorkTrack can’t open its storage</p>
         <p className="mt-2 text-sm leading-6 text-white/70">
           On-device storage is blocked. Leave private browsing, allow site data, then open WorkTrack again.
@@ -69,7 +69,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { message: string
   render() {
     if (this.state.message) {
       return (
-        <div className="mx-auto flex h-dvh max-w-[480px] flex-col justify-center bg-black px-6 text-white">
+        <div className="app-frame mx-auto flex max-w-[480px] flex-col justify-center bg-black px-6 text-white">
           <p className="text-2xl font-semibold">WorkTrack hit a problem</p>
           <p className="mt-2 text-sm leading-6 text-white/70">{this.state.message}</p>
         </div>

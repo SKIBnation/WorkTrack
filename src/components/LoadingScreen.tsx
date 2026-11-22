@@ -90,7 +90,7 @@ export function LoadingScreen({ onDone }: { onDone: () => void }) {
   }, [])
 
   return (
-    <div className="mx-auto flex h-dvh max-w-[480px] flex-col items-center justify-center bg-black text-white" role="status" aria-label="WorkTrack">
+    <div className="app-frame mx-auto flex max-w-[480px] flex-col items-center justify-center bg-black text-white" role="status" aria-label="WorkTrack">
       <svg viewBox="0 0 200 200" width="168" height="168" aria-hidden="true">
         <circle ref={ringRef} cx="100" cy="100" r="78" fill="none" stroke="#30d158" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="490" strokeDashoffset="490" opacity="0" transform="rotate(-90 100 100)" />
         {TICKS.map((tick, index) => (
