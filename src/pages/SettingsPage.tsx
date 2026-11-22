@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { DateTime } from 'luxon'
-import { Confirm, PageHeader, fieldClass } from '../components/ui.tsx'
+import { Confirm, PageHeader, Sheet, fieldClass } from '../components/ui.tsx'
 import { useWorkData } from '../hooks/useWorkData.ts'
 import { createBackup, parseBackup, shareOrDownload, shiftsToCsv } from '../lib/backup.ts'
 import { overtimeHourlyRate } from '../lib/calc.ts'
 import { deleteSchedule, replaceAllData, saveSchedule, uid, updateSettings } from '../lib/db.ts'
 import { Wallpaper } from '../components/Wallpaper.tsx'
 import { BACKGROUNDS } from '../lib/backgrounds.ts'
-import { CURRENCIES, formatInputNumber, formatMoney, parseNumber } from '../lib/format.ts'
+import { CURRENCIES, formatInputNumber, formatLongDay, formatMoney, formatTime, parseNumber } from '../lib/format.ts'
 import { notificationSupport, requestNotificationPermission } from '../lib/reminders.ts'
 import { parseTaxCode } from '../lib/tax.ts'
 import { resolveZone, TIMEZONES, WEEKDAYS } from '../lib/time.ts'
+import { UPDATES } from '../lib/updates.ts'
 import type { Goal, GoalDeposit, NotificationPreferences, OvertimeMethod, OvertimeMode, Schedule, Settings, Shift, ThemeMode, TimeFormat } from '../types.ts'
 
 export function SettingsPage() {
@@ -19,6 +20,7 @@ export function SettingsPage() {
   const [pending, setPending] = useState<{ settings: Settings; shifts: Shift[]; schedules: Schedule[]; goals: Goal[]; deposits: GoalDeposit[] } | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [permission, setPermission] = useState(notificationSupport())
+  const [updatesOpen, setUpdatesOpen] = useState(false)
 
   useEffect(() => {
     setPermission(notificationSupport())
@@ -306,6 +308,31 @@ export function SettingsPage() {
           <li>Open WorkTrack from the icon. It uses the full screen, and your shifts stay on the phone.</li>
         </ol>
       </Section>
+
+      <Section title="App">
+        <button type="button" className="block w-full py-3 text-left text-[15px]" onClick={() => setUpdatesOpen(true)}>
+          Updates
+        </button>
+      </Section>
+
+      {updatesOpen && (
+        <Sheet title="Updates" onClose={() => setUpdatesOpen(false)}>
+          <ul>
+            {UPDATES.map((update) => {
+              const when = DateTime.fromISO(update.at, { zone: 'utc' }).setZone(resolveZone(settings.timezone))
+              return (
+                <li key={update.at} className="border-b border-stroke py-3 last:border-0">
+                  <p className="text-[15px] font-medium">{update.title}</p>
+                  <p className="mt-1 text-[13px] tabular-nums text-muted">
+                    {formatLongDay(when)} · {formatTime(when, settings.timeFormat)}
+                  </p>
+                  <p className="mt-1 text-sm leading-5 text-muted">{update.detail}</p>
+                </li>
+              )
+            })}
+          </ul>
+        </Sheet>
+      )}
 
       {pending && (
         <Confirm
