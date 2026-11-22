@@ -1,6 +1,7 @@
 import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { HashRouter, Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/AppShell.tsx'
+import { LoadingScreen } from './components/LoadingScreen.tsx'
 import { db } from './lib/db.ts'
 import { GoalsPage } from './pages/GoalsPage.tsx'
 import { HistoryPage } from './pages/HistoryPage.tsx'
@@ -12,6 +13,7 @@ const StatsPage = lazy(() => import('./pages/StatsPage.tsx').then((module) => ({
 
 export default function App() {
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [introDone, setIntroDone] = useState(false)
 
   useEffect(() => {
     db.open()
@@ -19,14 +21,7 @@ export default function App() {
       .catch(() => setState('error'))
   }, [])
 
-  if (state === 'loading') {
-    return (
-      <div className="mx-auto flex h-dvh max-w-[480px] flex-col items-center justify-center bg-black text-white">
-        <div className="h-3 w-3 rounded-full bg-[#30d158]" />
-        <p className="mt-4 text-2xl font-semibold tracking-tight">WorkTrack</p>
-      </div>
-    )
-  }
+  if (!introDone || state === 'loading') return <LoadingScreen onDone={() => setIntroDone(true)} />
 
   if (state === 'error') {
     return (
