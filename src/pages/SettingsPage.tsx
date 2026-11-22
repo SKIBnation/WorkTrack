@@ -5,6 +5,7 @@ import { useWorkData } from '../hooks/useWorkData.ts'
 import { createBackup, parseBackup, shareOrDownload, shiftsToCsv } from '../lib/backup.ts'
 import { overtimeHourlyRate } from '../lib/calc.ts'
 import { deleteSchedule, replaceAllData, saveSchedule, uid, updateSettings } from '../lib/db.ts'
+import { Wallpaper } from '../components/Wallpaper.tsx'
 import { BACKGROUNDS } from '../lib/backgrounds.ts'
 import { CURRENCIES, formatInputNumber, formatMoney, parseNumber } from '../lib/format.ts'
 import { notificationSupport, requestNotificationPermission } from '../lib/reminders.ts'
@@ -168,18 +169,20 @@ export function SettingsPage() {
         <div className="grid grid-cols-2 gap-2 py-3" role="listbox" aria-label="Background">
           {BACKGROUNDS.map((preset) => {
             const selected = settings.background === preset.id
-            const paint = settings.theme === 'light' ? preset.light : preset.dark
             return (
               <button
                 key={preset.id}
                 type="button"
                 role="option"
                 aria-selected={selected}
-                className={`relative h-[72px] overflow-hidden rounded-2xl border-2 text-left ${selected ? 'border-gain' : settings.theme === 'light' ? 'border-black/10' : 'border-white/15'}`}
-                style={{ background: paint }}
+                className={`relative h-[84px] overflow-hidden rounded-2xl border-2 text-left ${selected ? 'border-gain' : settings.theme === 'light' ? 'border-black/10' : 'border-white/15'}`}
                 onClick={() => void updateSettings({ background: preset.id })}
               >
-                <span className={`absolute bottom-2 left-3 text-[13px] font-medium ${settings.theme === 'light' ? 'text-[#1c1c1e]' : 'text-white'}`}>
+                <Wallpaper preset={preset} theme={settings.theme} preview />
+                <span
+                  className={`absolute bottom-2 left-3 z-10 text-[13px] font-medium ${settings.theme === 'light' ? 'text-[#1c1c1e]' : 'text-white'}`}
+                  style={{ textShadow: settings.theme === 'light' ? '0 1px 2px rgba(255,255,255,0.7)' : '0 1px 3px rgba(0,0,0,0.65)' }}
+                >
                   {preset.name}
                 </span>
               </button>

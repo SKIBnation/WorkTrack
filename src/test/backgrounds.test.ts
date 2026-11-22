@@ -14,5 +14,7 @@ describe('backgrounds', () => {
     expect(normalizeSettings({}).background).toBe('plain')
     expect(normalizeSettings({ background: 'nope' as 'plain' }).background).toBe('plain')
     expect(backgroundById('ocean').name).toBe('Ocean')
+    expect(backgroundById('aurora').orbs.length).toBeGreaterThanOrEqual(4)
+    expect(backgroundById('plain').orbs).toHaveLength(0)
   })
 })

@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { WorkContext, useLiveWorkData, useWorkData } from '../hooks/useWorkData.ts'
 import { useReminders } from '../hooks/useReminders.ts'
+import { Wallpaper } from './Wallpaper.tsx'
 import { backgroundById } from '../lib/backgrounds.ts'
 
 const tabs = [
@@ -55,17 +56,21 @@ function ShellFrame() {
     }
   }, [settings])
 
+  const preset = backgroundById(settings?.background)
+  const theme = settings?.theme ?? 'dark'
+
   return (
-    <div className="relative mx-auto flex h-dvh max-w-[480px] flex-col bg-[var(--wallpaper)] text-fg">
-      <div className="shrink-0" style={{ height: 'env(safe-area-inset-top)' }} />
-      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+    <div className="relative mx-auto flex h-dvh max-w-[480px] flex-col overflow-hidden bg-[var(--wallpaper)] text-fg">
+      {preset.id !== 'plain' && <Wallpaper preset={preset} theme={theme} />}
+      <div className="relative z-10 shrink-0" style={{ height: 'env(safe-area-inset-top)' }} />
+      <main className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <div className="px-5 pt-4 pb-8">
           <Outlet />
         </div>
       </main>
       <nav
         aria-label="Primary"
-        className="shrink-0 border-t border-stroke bg-nav backdrop-blur-xl"
+        className="relative z-10 shrink-0 border-t border-stroke bg-nav backdrop-blur-xl"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="grid grid-cols-6">

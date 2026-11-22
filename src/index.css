@@ -49,13 +49,49 @@
 }
 
 :root[data-background]:not([data-background='plain']) {
-  --card: rgba(20, 20, 22, 0.82);
-  --nav: rgba(12, 12, 14, 0.78);
+  --card: rgba(12, 12, 14, 0.62);
+  --nav: rgba(8, 8, 10, 0.66);
 }
 
 :root[data-theme='light'][data-background]:not([data-background='plain']) {
-  --card: rgba(255, 255, 255, 0.78);
-  --nav: rgba(255, 255, 255, 0.8);
+  --card: rgba(255, 255, 255, 0.74);
+  --nav: rgba(255, 255, 255, 0.76);
+}
+
+.wallpaper-orb {
+  position: absolute;
+  border-radius: 9999px;
+  transform: translate(-50%, -50%);
+  filter: blur(10px);
+  animation: wallpaper-drift var(--drift, 24s) ease-in-out infinite alternate;
+  animation-delay: var(--delay, 0s);
+  will-change: transform;
+}
+
+.wallpaper-preview .wallpaper-orb {
+  filter: blur(6px);
+}
+
+.wallpaper-grain {
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+}
+
+.wallpaper-vignette {
+  background: radial-gradient(130% 100% at 50% 35%, transparent 58%, rgba(0, 0, 0, 0.28) 100%);
+}
+
+.wallpaper-vignette-light {
+  background: radial-gradient(120% 90% at 50% 18%, transparent 42%, rgba(255, 255, 255, 0.35) 100%);
+}
+
+@keyframes wallpaper-drift {
+  from {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    transform: translate(calc(-50% + var(--dx, 20px)), calc(-50% + var(--dy, -20px))) scale(1.12);
+  }
 }
 
 @theme inline {
