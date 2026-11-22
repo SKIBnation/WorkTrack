@@ -1,4 +1,4 @@
-import { useEffect, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 
 const variants = {
   primary: 'bg-gain text-[var(--gain-ink)]',
@@ -85,24 +85,148 @@ export function StatusPill({ status }: { status: 'off' | 'working' | 'break' }) 
 }
 
 export function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  const panelRef = useRef<HTMLDivElement>(null)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') onCloseRef.current()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [])
+
+  useEffect(() => {
+    const panel = panelRef.current
+    if (!panel) return
+
+    let startY = 0
+    let startX = 0
+    let scrollAtStart = 0
+    let offset = 0
+    let tracking = false
+    let dragging = false
+    let pointerId = -1
+
+    const blockNextClick = () => {
+      const block = (event: Event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        window.clearTimeout(timer)
+      }
+      document.addEventListener('click', block, { capture: true })
+      const timer = window.setTimeout(() => document.removeEventListener('click', block, { capture: true }), 400)
+    }
+
+    const snapBack = () => {
+      panel.style.transition = 'transform 180ms ease'
+      panel.style.transform = ''
+      const done = () => {
+        panel.style.transition = ''
+        panel.removeEventListener('transitionend', done)
+      }
+      panel.addEventListener('transitionend', done)
+    }
+
+    const finish = () => {
+      if (!tracking) return
+      tracking = false
+      if (!dragging) return
+      const pulled = offset
+      dragging = false
+      offset = 0
+      blockNextClick()
+      if (pulled > 80) {
+        panel.style.transition = 'transform 180ms ease'
+        panel.style.transform = 'translateY(110%)'
+        window.setTimeout(() => onCloseRef.current(), 170)
+        return
+      }
+      snapBack()
+    }
+
+    const moveBy = (dy: number, dx: number, prevent: () => void) => {
+      if (!tracking) return
+      if (!dragging) {
+        if (dy < 10 || Math.abs(dx) > dy || scrollAtStart > 0) return
+        dragging = true
+      }
+      prevent()
+      offset = dy
+      panel.style.transition = ''
+      panel.style.transform = `translateY(${dy}px)`
+    }
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1) return
+      tracking = true
+      dragging = false
+      offset = 0
+      startY = event.touches[0].clientY
+      startX = event.touches[0].clientX
+      scrollAtStart = panel.scrollTop
+    }
+    const onTouchMove = (event: TouchEvent) => {
+      if (event.touches.length !== 1) return
+      moveBy(event.touches[0].clientY - startY, event.touches[0].clientX - startX, () => event.preventDefault())
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType !== 'mouse' || event.button !== 0) return
+      tracking = true
+      dragging = false
+      offset = 0
+      startY = event.clientY
+      startX = event.clientX
+      scrollAtStart = panel.scrollTop
+      pointerId = event.pointerId
+    }
+    const onPointerMove = (event: PointerEvent) => {
+      if (event.pointerId !== pointerId) return
+      moveBy(event.clientY - startY, event.clientX - startX, () => {
+        if (!panel.hasPointerCapture(event.pointerId)) panel.setPointerCapture(event.pointerId)
+      })
+    }
+    const onPointerUp = (event: PointerEvent) => {
+      if (event.pointerId !== pointerId) return
+      pointerId = -1
+      finish()
+    }
+
+    panel.addEventListener('touchstart', onTouchStart, { passive: true })
+    panel.addEventListener('touchmove', onTouchMove, { passive: false })
+    panel.addEventListener('touchend', finish)
+    panel.addEventListener('touchcancel', finish)
+    panel.addEventListener('pointerdown', onPointerDown)
+    panel.addEventListener('pointermove', onPointerMove)
+    panel.addEventListener('pointerup', onPointerUp)
+    panel.addEventListener('pointercancel', onPointerUp)
+    return () => {
+      panel.removeEventListener('touchstart', onTouchStart)
+      panel.removeEventListener('touchmove', onTouchMove)
+      panel.removeEventListener('touchend', finish)
+      panel.removeEventListener('touchcancel', finish)
+      panel.removeEventListener('pointerdown', onPointerDown)
+      panel.removeEventListener('pointermove', onPointerMove)
+      panel.removeEventListener('pointerup', onPointerUp)
+      panel.removeEventListener('pointercancel', onPointerUp)
+    }
+  }, [])
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <button className="absolute inset-0 bg-black/60" aria-label="Close" onClick={onClose} />
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative max-h-[92dvh] w-full max-w-[480px] overflow-y-auto overscroll-contain rounded-t-[28px] border border-stroke bg-card px-5 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+        className="relative max-h-[92dvh] w-full max-w-[480px] overflow-y-auto overscroll-contain rounded-t-[28px] border border-stroke bg-card px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
       >
-        <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-[var(--track)]" />
+        <button type="button" aria-label="Close" onClick={onClose} className="sticky top-0 z-10 -mx-5 flex h-8 w-[calc(100%+2.5rem)] items-center justify-center bg-card">
+          <span className="h-1.5 w-10 rounded-full bg-[var(--track)]" />
+        </button>
         <h2 className="mb-4 text-xl font-semibold tracking-tight">{title}</h2>
         {children}
       </div>
