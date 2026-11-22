@@ -147,6 +147,23 @@ export function emptyPeriod(): PeriodTotals {
   }
 }
 
+export function slicesInPeriod(
+  slices: ClassifiedSlice[],
+  shiftId: string,
+  period: 'day' | 'week' | 'month' | 'year' | 'all',
+  anchor: DateTime,
+  weekStartsOn: WeekStart,
+): ClassifiedSlice[] {
+  return slices.filter((slice) => {
+    if (slice.shiftId !== shiftId) return false
+    if (period === 'all') return true
+    if (period === 'day') return slice.dateKey === (anchor.toISODate() ?? '')
+    if (period === 'week') return slice.weekKey === weekId(anchor, weekStartsOn)
+    if (period === 'month') return slice.monthKey === anchor.toFormat('yyyy-MM')
+    return slice.yearKey === anchor.toFormat('yyyy')
+  })
+}
+
 export function totalsFromSlices(slices: ClassifiedSlice[]): PeriodTotals {
   const shiftIds = new Set<string>()
   const days = new Set<string>()
@@ -192,8 +209,8 @@ export function grossMs(shift: Shift, asOfMs: number): number {
 export function validateShift(shift: Shift, others: Shift[], asOfMs: number): string | null {
   const start = Date.parse(shift.clockIn)
   if (!Number.isFinite(start)) return 'Enter a valid clock-in time.'
+  if (start > asOfMs) return 'Clock-in can’t be in the future.'
   const open = shift.clockOut == null
-  if (open && start > asOfMs) return 'Clock-in can’t be in the future.'
   if (open && asOfMs - start > OPEN_SHIFT_LIMIT_MS) {
     return 'An open shift can’t start more than 18 hours ago. Enter a clock-out time instead.'
   }
@@ -203,6 +220,7 @@ export function validateShift(shift: Shift, others: Shift[], asOfMs: number): st
     end = Date.parse(shift.clockOut ?? '')
     if (!Number.isFinite(end)) return 'Enter a valid clock-out time.'
     if (end <= start) return 'Clock-out must be after clock-in.'
+    if (end > asOfMs) return 'Clock-out can’t be in the future.'
   }
 
   if (!Number.isFinite(shift.hourlyRate) || shift.hourlyRate < 0) return 'Enter a valid hourly rate.'
@@ -265,6 +283,7 @@ export function summarize(input: {
       input.asOfMs,
       zone,
       weekStartsOn,
+      new Set(hypotheticals.map((shift) => shift.id)),
     )
     estimatedMonth = totalsFromSlices(combined.filter((slice) => slice.monthKey === monthKey)).totalEarnings
   }
@@ -434,10 +453,16 @@ function paceProjection(earned: number, elapsed: number, total: number): number 
   return (earned / elapsed) * total
 }
 
-function classifyShifts(shifts: Shift[], asOfMs: number, zone: string, weekStartsOn: WeekStart): ClassifiedSlice[] {
+function classifyShifts(
+  shifts: Shift[],
+  asOfMs: number,
+  zone: string,
+  weekStartsOn: WeekStart,
+  futureShiftIds?: Set<string>,
+): ClassifiedSlice[] {
   const raw: RawSlice[] = []
   for (const shift of shifts) {
-    const bounds = shiftBounds(shift, asOfMs)
+    const bounds = shiftBounds(shift, asOfMs, futureShiftIds?.has(shift.id) ?? false)
     if (!bounds) continue
     const paid = paidIntervals(shift, bounds.startMs, bounds.endMs)
     for (const interval of paid) {
@@ -507,11 +532,13 @@ function classify(raw: RawSlice[]): ClassifiedSlice[] {
   return classified
 }
 
-function shiftBounds(shift: Shift, asOfMs: number): Interval | null {
+function shiftBounds(shift: Shift, asOfMs: number, allowFuture = false): Interval | null {
   const startMs = Date.parse(shift.clockIn)
   if (!Number.isFinite(startMs)) return null
-  const endMs = shift.clockOut == null ? asOfMs : Date.parse(shift.clockOut)
-  if (!Number.isFinite(endMs) || endMs <= startMs) return null
+  let endMs = shift.clockOut == null ? asOfMs : Date.parse(shift.clockOut)
+  if (!Number.isFinite(endMs)) return null
+  if (!allowFuture && endMs > asOfMs) endMs = asOfMs
+  if (endMs <= startMs) return null
   return { startMs, endMs }
 }
 

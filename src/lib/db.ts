@@ -72,20 +72,29 @@ export async function updateSettings(patch: Partial<Settings>): Promise<void> {
 }
 
 export async function clockIn(settings: Settings): Promise<string | null> {
-  const open = await db.shifts.filter((shift) => shift.clockOut == null).first()
-  if (open) return 'You are already clocked in.'
-  await db.shifts.add(createShift(settings, new Date().toISOString()))
+  const now = new Date().toISOString()
+  const nowMs = Date.parse(now)
+  const others = await db.shifts.toArray()
+  if (others.some((shift) => shift.clockOut == null)) return 'You are already clocked in.'
+  const shift = createShift(settings, now)
+  const error = validateShift(shift, others, nowMs)
+  if (error) return error
+  await db.shifts.add(shift)
   return null
 }
 
-export async function clockOut(id: string): Promise<boolean> {
+export async function clockOut(id: string): Promise<string | null> {
   const shift = await db.shifts.get(id)
-  if (!shift || shift.clockOut) return false
+  if (!shift || shift.clockOut) return null
   const now = new Date().toISOString()
   const nowMs = Date.parse(now)
   const breaks = shift.breaks.map((entry) => closeOpenBreak(entry, now, nowMs))
+  const next: Shift = { ...shift, clockOut: now, breaks, updatedAt: now }
+  const others = await db.shifts.toArray()
+  const error = validateShift(next, others, nowMs)
+  if (error) return error
   await db.shifts.update(id, { clockOut: now, breaks, updatedAt: now })
-  return true
+  return null
 }
 
 export async function startBreak(shift: Shift): Promise<void> {

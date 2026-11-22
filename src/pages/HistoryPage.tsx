@@ -4,11 +4,11 @@ import { DateTime } from 'luxon'
 import { ShiftEditor } from '../components/ShiftEditor.tsx'
 import { Button, PageHeader, Sheet } from '../components/ui.tsx'
 import { useWorkData } from '../hooks/useWorkData.ts'
-import { grossMs, overtimeHourlyRate, totalsFromSlices, type ClassifiedSlice } from '../lib/calc.ts'
+import { grossMs, overtimeHourlyRate, slicesInPeriod, totalsFromSlices, type ClassifiedSlice } from '../lib/calc.ts'
 import { createShift } from '../lib/db.ts'
 import { formatDay, formatHours, formatLongDay, formatMoney, formatTime } from '../lib/format.ts'
 import { instantInZone, resolveZone, startOfWeek, toUtcIso, weekdayHeaders } from '../lib/time.ts'
-import type { Shift } from '../types.ts'
+import type { Shift, WeekStart } from '../types.ts'
 
 type Period = 'day' | 'week' | 'month' | 'year' | 'all'
 type View = 'list' | 'calendar'
@@ -34,10 +34,11 @@ export function HistoryPage() {
     .filter((shift) => shiftOverlaps(shift, period, anchor, settings.weekStartsOn, now))
 
   const newShift = () => {
-    const start = DateTime.fromMillis(now, { zone }).startOf('hour')
+    const end = DateTime.fromMillis(now, { zone }).startOf('minute')
     const hours = settings.normalDailyHours > 0 ? settings.normalDailyHours : 8
+    const start = end.minus({ hours })
     setCreating(true)
-    setEditing(createShift(settings, toUtcIso(start), toUtcIso(start.plus({ hours }))))
+    setEditing(createShift(settings, toUtcIso(start), toUtcIso(end)))
   }
 
   return (
@@ -89,7 +90,16 @@ export function HistoryPage() {
               </button>
             </div>
           )}
-          <ShiftList shifts={visible} zone={zone} timeFormat={settings.timeFormat} slices={summary.slices} onOpen={setSelectedId} />
+          <ShiftList
+            shifts={visible}
+            zone={zone}
+            timeFormat={settings.timeFormat}
+            slices={summary.slices}
+            period={period}
+            anchor={anchor}
+            weekStartsOn={settings.weekStartsOn}
+            onOpen={setSelectedId}
+          />
         </>
       ) : (
         <Calendar
@@ -139,19 +149,25 @@ function ShiftList({
   zone,
   timeFormat,
   slices,
+  period,
+  anchor,
+  weekStartsOn,
   onOpen,
 }: {
   shifts: Shift[]
   zone: string
   timeFormat: '12' | '24'
   slices: ClassifiedSlice[]
+  period: Period
+  anchor: DateTime
+  weekStartsOn: WeekStart
   onOpen: (id: string) => void
 }) {
   if (shifts.length === 0) return <p className="py-10 text-center text-sm text-muted">No shifts in this period.</p>
   return (
     <div className="space-y-2">
       {shifts.map((shift) => {
-        const totals = totalsFromSlices(slices.filter((slice) => slice.shiftId === shift.id))
+        const totals = totalsFromSlices(slicesInPeriod(slices, shift.id, period, anchor, weekStartsOn))
         const start = instantInZone(shift.clockIn, zone)
         const end = shift.clockOut ? instantInZone(shift.clockOut, zone) : null
         return (
@@ -247,7 +263,16 @@ function Calendar({
         })}
       </div>
       <h2 className="mt-5 mb-2 text-sm font-medium">{selected ? formatLongDay(DateTime.fromISO(selected, { zone: anchor.zoneName ?? 'Europe/London' })) : 'Day'}</h2>
-      <ShiftList shifts={[...selectedShifts].reverse()} zone={zone} timeFormat={timeFormat} slices={slices} onOpen={onOpen} />
+      <ShiftList
+        shifts={[...selectedShifts].reverse()}
+        zone={zone}
+        timeFormat={timeFormat}
+        slices={slices}
+        period="day"
+        anchor={DateTime.fromISO(selected, { zone: anchor.zone })}
+        weekStartsOn={weekStartsOn}
+        onOpen={onOpen}
+      />
     </div>
   )
 }

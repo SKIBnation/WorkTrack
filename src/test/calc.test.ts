@@ -1,7 +1,7 @@
 import { DateTime } from 'luxon'
 import { describe, expect, it } from 'vitest'
 import type { Schedule, Settings, Shift } from '../types.ts'
-import { summarize, totalsFromSlices, validateShift } from '../lib/calc.ts'
+import { slicesInPeriod, summarize, totalsFromSlices, validateShift } from '../lib/calc.ts'
 import { parseBackup } from '../lib/backup.ts'
 import { evaluateReminders } from '../lib/reminders.ts'
 import { defaultSettings } from '../lib/settings.ts'
@@ -319,6 +319,24 @@ describe('validation and backup', () => {
     const adjacent = makeShift({ id: 'c', clockIn: at('2026-11-16T12:00'), clockOut: at('2026-11-16T13:00') })
     expect(validateShift(overlap, [first], ms('2026-11-16T18:00'))).toMatch(/overlap/i)
     expect(validateShift(adjacent, [first], ms('2026-11-16T18:00'))).toBeNull()
+  })
+
+  it('rejects a finish time that has not happened and ignores that future time', () => {
+    const shift = makeShift({ id: 'future', clockIn: at('2026-11-16T09:00'), clockOut: at('2026-11-16T17:00') })
+    expect(validateShift(shift, [], ms('2026-11-16T12:00'))).toMatch(/future/i)
+    expect(run([shift], {}, '2026-11-16T12:00').lifetime.paidHours).toBeCloseTo(3)
+  })
+
+  it('attributes an overnight shift to the day and month each part falls in', () => {
+    const summary = run(
+      [makeShift({ id: 'night', clockIn: at('2026-01-31T22:00'), clockOut: at('2026-02-01T06:00') })],
+      {},
+      '2026-02-02T12:00',
+    )
+    const january = slicesInPeriod(summary.slices, 'night', 'month', DateTime.fromISO('2026-01-15', { zone }), 1)
+    const firstNight = slicesInPeriod(summary.slices, 'night', 'day', DateTime.fromISO('2026-02-01', { zone }), 1)
+    expect(totalsFromSlices(january).paidHours).toBeCloseTo(2)
+    expect(totalsFromSlices(firstNight).paidHours).toBeCloseTo(6)
   })
 
   it('rejects an open shift that started more than 18 hours ago', () => {

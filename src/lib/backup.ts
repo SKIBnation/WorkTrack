@@ -146,8 +146,11 @@ export async function shareOrDownload(filename: string, content: string, type: s
   const link = document.createElement('a')
   link.href = url
   link.download = filename
+  link.rel = 'noopener'
+  document.body.appendChild(link)
   link.click()
-  URL.revokeObjectURL(url)
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500)
 }
 
 function csvCell(value: string | number): string {

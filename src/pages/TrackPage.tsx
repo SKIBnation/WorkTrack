@@ -5,7 +5,7 @@ import { ShiftEditor } from '../components/ShiftEditor.tsx'
 import { Button, Card, PageHeader, StatusPill } from '../components/ui.tsx'
 import { useWakeLock } from '../hooks/useWakeLock.ts'
 import { useWorkData } from '../hooks/useWorkData.ts'
-import { samePayRules, totalsFromSlices } from '../lib/calc.ts'
+import { samePayRules, slicesInPeriod, totalsFromSlices } from '../lib/calc.ts'
 import {
   addDurationBreak,
   applyCurrentPay,
@@ -100,8 +100,9 @@ export function TrackPage() {
           onClick={() =>
             void run(async () => {
               if (!active) return
-              const closed = await clockOut(active.id)
-              if (closed) showClockOut(active.id)
+              const message = await clockOut(active.id)
+              if (message) return message
+              showClockOut(active.id)
             })
           }
         >
@@ -184,7 +185,7 @@ export function TrackPage() {
           <h2 className="mb-2 text-[12px] font-medium uppercase tracking-[0.14em] text-muted">Today</h2>
           <div className="space-y-2">
             {todayShifts.map((shift) => {
-              const totals = totalsFromSlices(summary.slices.filter((slice) => slice.shiftId === shift.id))
+              const totals = totalsFromSlices(slicesInPeriod(summary.slices, shift.id, 'day', DateTime.fromMillis(now, { zone }), settings.weekStartsOn))
               const start = instantInZone(shift.clockIn, zone)
               const end = shift.clockOut ? instantInZone(shift.clockOut, zone) : null
               return (

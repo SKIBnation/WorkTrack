@@ -1,4 +1,4 @@
-import { createContext, useContext, useLayoutEffect, useRef } from 'react'
+import { createContext, useContext, useEffect, useLayoutEffect, useRef } from 'react'
 import { Button } from './ui.tsx'
 import { useWorkData } from '../hooks/useWorkData.ts'
 import { grossMs, totalsFromSlices, type WorkSummary } from '../lib/calc.ts'
@@ -20,9 +20,12 @@ export function ClockOutCard({ shiftId, onDone }: { shiftId: string; onDone: () 
   const onDoneRef = useRef(onDone)
   onDoneRef.current = onDone
 
-  if (!settings || !summary || !shift?.clockOut) {
-    return <div className="absolute inset-0 z-[80]" style={{ background: 'var(--wallpaper)' }} aria-hidden="true" />
-  }
+  useEffect(() => {
+    if (!settings || !summary) return
+    if (!shifts.some((item) => item.id === shiftId)) onDoneRef.current()
+  }, [settings, summary, shifts, shiftId])
+
+  if (!settings || !summary || !shift?.clockOut) return null
 
   return (
     <Receipt
