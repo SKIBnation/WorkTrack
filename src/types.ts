@@ -1,3 +1,5 @@
+import type { BackgroundId } from './lib/backgrounds.ts'
+
 export type ThemeMode = 'dark' | 'light'
 export type TimeFormat = '12' | '24'
 export type WeekStart = 0 | 1
@@ -88,6 +90,7 @@ export interface Settings {
   /** UK PAYE code, such as 1257L. Used only to estimate take-home pay. */
   taxCode: string
   theme: ThemeMode
+  background: BackgroundId
   timeFormat: TimeFormat
   weekStartsOn: WeekStart
   timezone: string

@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { WorkContext, useLiveWorkData, useWorkData } from '../hooks/useWorkData.ts'
 import { useReminders } from '../hooks/useReminders.ts'
+import { backgroundById } from '../lib/backgrounds.ts'
 
 const tabs = [
   { to: '/', label: 'Home', icon: House, end: true },
@@ -42,7 +43,11 @@ function ShellFrame() {
 
   useEffect(() => {
     if (!settings) return
-    document.documentElement.dataset.theme = settings.theme
+    const preset = backgroundById(settings.background)
+    const root = document.documentElement
+    root.dataset.theme = settings.theme
+    root.dataset.background = preset.id
+    root.style.setProperty('--wallpaper', settings.theme === 'light' ? preset.light : preset.dark)
     try {
       localStorage.setItem('worktrack-theme', settings.theme)
     } catch {
@@ -51,8 +56,8 @@ function ShellFrame() {
   }, [settings])
 
   return (
-    <div className="relative mx-auto flex h-dvh max-w-[480px] flex-col bg-bg text-fg">
-      <div className="shrink-0 bg-black" style={{ height: 'env(safe-area-inset-top)' }} />
+    <div className="relative mx-auto flex h-dvh max-w-[480px] flex-col bg-[var(--wallpaper)] text-fg">
+      <div className="shrink-0" style={{ height: 'env(safe-area-inset-top)' }} />
       <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <div className="px-5 pt-4 pb-8">
           <Outlet />

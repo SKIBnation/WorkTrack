@@ -21,6 +21,7 @@
   --nav: rgba(12, 12, 14, 0.9);
   --field: rgba(255, 255, 255, 0.06);
   --track: rgba(255, 255, 255, 0.1);
+  --wallpaper: #000000;
 }
 
 :root[data-theme='light'] {
@@ -44,6 +45,17 @@
   --nav: rgba(255, 255, 255, 0.92);
   --field: rgba(0, 0, 0, 0.04);
   --track: rgba(0, 0, 0, 0.08);
+  --wallpaper: #f2f2f7;
+}
+
+:root[data-background]:not([data-background='plain']) {
+  --card: rgba(20, 20, 22, 0.82);
+  --nav: rgba(12, 12, 14, 0.78);
+}
+
+:root[data-theme='light'][data-background]:not([data-background='plain']) {
+  --card: rgba(255, 255, 255, 0.78);
+  --nav: rgba(255, 255, 255, 0.8);
 }
 
 @theme inline {
@@ -70,7 +82,13 @@ body,
 
 html,
 body {
-  background: #000;
+  background: var(--wallpaper);
+}
+
+:root[data-background]:not([data-background='plain']) .bg-card,
+:root[data-background]:not([data-background='plain']) .bg-nav {
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
 body {

@@ -1,4 +1,5 @@
 import type { Settings } from '../types.ts'
+import { backgroundById } from './backgrounds.ts'
 import { parseTaxCode } from './tax.ts'
 
 export const SETTINGS_ID = 'app' as const
@@ -20,6 +21,7 @@ export function defaultSettings(): Settings {
     monthlyEarningsTarget: 2000,
     taxCode: '1257L',
     theme: 'dark',
+    background: 'plain',
     timeFormat: '24',
     weekStartsOn: 1,
     timezone: 'Europe/London',
@@ -51,6 +53,7 @@ export function normalizeSettings(input: Partial<Settings> | null | undefined): 
     ...input,
     id: SETTINGS_ID,
     taxCode: parseTaxCode(input.taxCode)?.canonical ?? base.taxCode,
+    background: backgroundById(input.background).id,
     notifications: { ...base.notifications, ...input.notifications },
     notificationState: { ...base.notificationState, ...input.notificationState },
   }

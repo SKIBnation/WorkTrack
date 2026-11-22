@@ -5,6 +5,7 @@ import { useWorkData } from '../hooks/useWorkData.ts'
 import { createBackup, parseBackup, shareOrDownload, shiftsToCsv } from '../lib/backup.ts'
 import { overtimeHourlyRate } from '../lib/calc.ts'
 import { deleteSchedule, replaceAllData, saveSchedule, uid, updateSettings } from '../lib/db.ts'
+import { BACKGROUNDS } from '../lib/backgrounds.ts'
 import { CURRENCIES, formatInputNumber, formatMoney, parseNumber } from '../lib/format.ts'
 import { notificationSupport, requestNotificationPermission } from '../lib/reminders.ts'
 import { parseTaxCode } from '../lib/tax.ts'
@@ -161,6 +162,30 @@ export function SettingsPage() {
           ]}
           onChange={(value: string) => void updateSettings({ weekStartsOn: value === '0' ? 0 : 1 })}
         />
+      </Section>
+
+      <Section title="Background">
+        <div className="grid grid-cols-2 gap-2 py-3" role="listbox" aria-label="Background">
+          {BACKGROUNDS.map((preset) => {
+            const selected = settings.background === preset.id
+            const paint = settings.theme === 'light' ? preset.light : preset.dark
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                className={`relative h-[72px] overflow-hidden rounded-2xl border-2 text-left ${selected ? 'border-gain' : settings.theme === 'light' ? 'border-black/10' : 'border-white/15'}`}
+                style={{ background: paint }}
+                onClick={() => void updateSettings({ background: preset.id })}
+              >
+                <span className={`absolute bottom-2 left-3 text-[13px] font-medium ${settings.theme === 'light' ? 'text-[#1c1c1e]' : 'text-white'}`}>
+                  {preset.name}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </Section>
 
       <Section title="Schedule">
