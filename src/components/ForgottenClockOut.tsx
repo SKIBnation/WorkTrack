@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { DateTime } from 'luxon'
+import { useShowClockOut } from './ClockOutCard.tsx'
 import { Button } from './ui.tsx'
 import { saveShift } from '../lib/db.ts'
 import { isForgottenClockOut, shiftEndedAt, suggestedClockOut } from '../lib/forgotten.ts'
@@ -54,6 +55,7 @@ function Prompt({
   now: number
   onSnooze: () => void
 }) {
+  const showClockOut = useShowClockOut()
   const zone = resolveZone(settings.timezone)
   const suggested = DateTime.fromMillis(suggestedClockOut(shift.clockIn, shift.normalDailyHours, now), { zone })
   const [date, setDate] = useState(suggested.toFormat('yyyy-MM-dd'))
@@ -84,6 +86,7 @@ function Prompt({
     const message = await saveShift(shiftEndedAt(shift, end.toMillis()), shifts, now)
     setBusy(false)
     if (message) setError(message)
+    else showClockOut(shift.id)
   }
 
   return (

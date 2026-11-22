@@ -1,8 +1,9 @@
 import { CalendarDays, ChartColumn, House, PiggyBank, Settings, Timer } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { WorkContext, useLiveWorkData, useWorkData } from '../hooks/useWorkData.ts'
 import { useReminders } from '../hooks/useReminders.ts'
+import { ClockOutCard, ClockOutContextProvider } from './ClockOutCard.tsx'
 import { ForgottenClockOut } from './ForgottenClockOut.tsx'
 import { Wallpaper } from './Wallpaper.tsx'
 import { backgroundById } from '../lib/backgrounds.ts'
@@ -38,6 +39,7 @@ function ShellFrame() {
   const location = useLocation()
   const { settings, shifts, summary, now } = useWorkData()
   const reminders = useReminders(settings, summary)
+  const [receiptId, setReceiptId] = useState<string | null>(null)
 
   useEffect(() => {
     document.title = `${titles[location.pathname] ?? 'WorkTrack'} · WorkTrack`
@@ -62,6 +64,7 @@ function ShellFrame() {
   const activeShift = shifts.find((shift) => shift.id === summary?.activeShiftId) ?? null
 
   return (
+    <ClockOutContextProvider value={setReceiptId}>
     <div className="relative mx-auto flex h-dvh max-w-[480px] flex-col overflow-hidden bg-[var(--wallpaper)] text-fg">
       {preset.id !== 'plain' && <Wallpaper preset={preset} theme={theme} />}
       <div className="relative z-10 shrink-0" style={{ height: 'env(safe-area-inset-top)' }} />
@@ -92,6 +95,7 @@ function ShellFrame() {
         </div>
       </nav>
       {settings && activeShift && <ForgottenClockOut shift={activeShift} shifts={shifts} settings={settings} now={now} />}
+      {receiptId && <ClockOutCard shiftId={receiptId} onDone={() => setReceiptId(null)} />}
       {reminders.toast && (
         <div className="pointer-events-none absolute inset-x-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30">
           <div className="pointer-events-auto rounded-2xl border border-stroke bg-raised px-4 py-3 shadow-lg">
@@ -104,5 +108,6 @@ function ShellFrame() {
         </div>
       )}
     </div>
+    </ClockOutContextProvider>
   )
 }

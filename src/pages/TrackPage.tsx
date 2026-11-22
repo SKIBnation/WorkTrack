@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { DateTime } from 'luxon'
+import { useShowClockOut } from '../components/ClockOutCard.tsx'
 import { ShiftEditor } from '../components/ShiftEditor.tsx'
 import { Button, Card, PageHeader, StatusPill } from '../components/ui.tsx'
 import { useWakeLock } from '../hooks/useWakeLock.ts'
@@ -20,6 +21,7 @@ import { fieldClass } from '../components/ui.tsx'
 
 export function TrackPage() {
   const { ready, settings, shifts, summary, now } = useWorkData()
+  const showClockOut = useShowClockOut()
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [addingBreak, setAddingBreak] = useState(false)
@@ -95,7 +97,13 @@ export function TrackPage() {
         <Button
           variant={status === 'working' ? 'primary' : 'secondary'}
           disabled={busy || status === 'off' || !active}
-          onClick={() => void run(async () => active && clockOut(active.id))}
+          onClick={() =>
+            void run(async () => {
+              if (!active) return
+              const closed = await clockOut(active.id)
+              if (closed) showClockOut(active.id)
+            })
+          }
         >
           Clock out
         </Button>

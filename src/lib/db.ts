@@ -78,13 +78,14 @@ export async function clockIn(settings: Settings): Promise<string | null> {
   return null
 }
 
-export async function clockOut(id: string): Promise<void> {
+export async function clockOut(id: string): Promise<boolean> {
   const shift = await db.shifts.get(id)
-  if (!shift || shift.clockOut) return
+  if (!shift || shift.clockOut) return false
   const now = new Date().toISOString()
   const nowMs = Date.parse(now)
   const breaks = shift.breaks.map((entry) => closeOpenBreak(entry, now, nowMs))
   await db.shifts.update(id, { clockOut: now, breaks, updatedAt: now })
+  return true
 }
 
 export async function startBreak(shift: Shift): Promise<void> {
