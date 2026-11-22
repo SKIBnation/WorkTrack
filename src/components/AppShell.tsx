@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { WorkContext, useLiveWorkData, useWorkData } from '../hooks/useWorkData.ts'
 import { useReminders } from '../hooks/useReminders.ts'
+import { ForgottenClockOut } from './ForgottenClockOut.tsx'
 import { Wallpaper } from './Wallpaper.tsx'
 import { backgroundById } from '../lib/backgrounds.ts'
 
@@ -35,7 +36,7 @@ export function AppShell() {
 
 function ShellFrame() {
   const location = useLocation()
-  const { settings, summary } = useWorkData()
+  const { settings, shifts, summary, now } = useWorkData()
   const reminders = useReminders(settings, summary)
 
   useEffect(() => {
@@ -58,6 +59,7 @@ function ShellFrame() {
 
   const preset = backgroundById(settings?.background)
   const theme = settings?.theme ?? 'dark'
+  const activeShift = shifts.find((shift) => shift.id === summary?.activeShiftId) ?? null
 
   return (
     <div className="relative mx-auto flex h-dvh max-w-[480px] flex-col overflow-hidden bg-[var(--wallpaper)] text-fg">
@@ -89,6 +91,7 @@ function ShellFrame() {
           ))}
         </div>
       </nav>
+      {settings && activeShift && <ForgottenClockOut shift={activeShift} shifts={shifts} settings={settings} now={now} />}
       {reminders.toast && (
         <div className="pointer-events-none absolute inset-x-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30">
           <div className="pointer-events-auto rounded-2xl border border-stroke bg-raised px-4 py-3 shadow-lg">
