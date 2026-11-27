@@ -15,7 +15,7 @@ Your shifts stay on the device. The app records clock-in and clock-out times, un
 Open PowerShell in this folder:
 
 ```powershell
-cd C:\Users\alica\Projects\WorkTrack
+cd C:\Users\YOURNAME\WHERE_YOU_DOWLOADED\WorkTrack
 npm install
 npm run dev
 ```
